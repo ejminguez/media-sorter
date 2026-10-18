@@ -56,14 +56,3 @@ The executable will be at `dist/MediaSorter` (macOS) or `dist/MediaSorter.exe` (
 ### inani diay iyahang nawng pag ma sort na
 <img width="761" height="235" alt="image" src="https://github.com/user-attachments/assets/f6823a82-d6fe-46a1-948e-dd700b30d953" />
 
-
-
-```
-Sorted_Media/
-  2026-10 October/
-    Photos/
-    Videos/
-  2026-09 September/
-    Photos/
-    Videos/
-```
