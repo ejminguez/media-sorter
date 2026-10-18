@@ -4,7 +4,7 @@ Sort photos and videos into folders by the month they were created.
 
 ## Features
 
-- Sorts photos and videos into folders by the month they were created
+- Sorts photos and videos into folders by the month they were last modified
 - Makes a `Photos` and a `Videos` folder inside each month
 - Copies files by default, so your originals stay safe
 - Has a dry run mode to preview changes first
