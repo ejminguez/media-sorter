@@ -1,8 +1,8 @@
 # media-sorter
 
-hi, this is a media sorter para organize ka!
+Sort photos and videos into folders by the month they were created.
 
-features:
+## Features
 
 - Sorts photos and videos into folders by the month they were created
 - Makes a `Photos` and a `Videos` folder inside each month
@@ -10,20 +10,44 @@ features:
 - Has a dry run mode to preview changes first
 - Handles duplicate file names without overwriting anything
 - No extra packages needed, only Python 3
+- GUI with folder picker, progress bar, and live log
+- Can be built as a standalone executable
 
-## how to use
+## CLI Usage
 
 ```
 python3 sort_media.py /path/to/your/folder
 ```
 
-options:
+Options:
 
 - `--dry-run` shows what would happen, changes nothing
 - `--move` moves files instead of copying them
 - `--dest /path/to/output` saves the sorted folders somewhere else
 
-## result
+## GUI Usage
+
+```
+python3 gui.py
+```
+
+1. Click **Browse...** to select a source folder
+2. Optionally change the destination folder
+3. Choose **Move files** or **Dry run** if needed
+4. Click **Sort Media** and watch progress in the log
+
+## Build as Standalone Executable
+
+Install PyInstaller and run:
+
+```
+pip install pyinstaller
+pyinstaller --onefile --windowed gui.py --name MediaSorter
+```
+
+The executable will be at `dist/MediaSorter` (macOS) or `dist/MediaSorter.exe` (Windows).
+
+## Result
 
 ```
 Sorted_Media/
