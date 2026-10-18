@@ -39,12 +39,6 @@ VIDEO_EXTS = {
 
 
 def get_created_date(path: Path) -> datetime:
-    """Get the date the file was created.
-
-    1. Try the Mac metadata (this is usually the date the photo was taken).
-    2. If that fails, use the file's creation time on disk.
-    3. As a last resort, use the last modified time.
-    """
     try:
         result = subprocess.run(
             ["mdls", "-name", "kMDItemContentCreationDate", "-raw", str(path)],
@@ -54,9 +48,8 @@ def get_created_date(path: Path) -> datetime:
         )
         text = result.stdout.strip()
         if text and text != "(null)":
-            # Example: "2026-10-05 14:22:11 +0000"
             dt = datetime.strptime(text, "%Y-%m-%d %H:%M:%S %z")
-            return dt.astimezone()  # convert to your local time
+            return dt.astimezone()
     except Exception:
         pass
 
@@ -66,7 +59,6 @@ def get_created_date(path: Path) -> datetime:
 
 
 def unique_path(target: Path) -> Path:
-    """If a file with the same name exists, add _1, _2, and so on."""
     if not target.exists():
         return target
     counter = 1
@@ -75,6 +67,70 @@ def unique_path(target: Path) -> Path:
         if not candidate.exists():
             return candidate
         counter += 1
+
+
+def sort_media_core(source: Path, dest: Path, move: bool = False, dry_run: bool = False, progress_callback=None):
+    count_photos = 0
+    count_videos = 0
+    skipped = 0
+
+    all_files = sorted(source.rglob("*"))
+    media_files = []
+    for file in all_files:
+        if not file.is_file() or file.name.startswith("."):
+            continue
+        if dest in file.parents:
+            continue
+        ext = file.suffix.lower()
+        if ext in PHOTO_EXTS or ext in VIDEO_EXTS:
+            media_files.append(file)
+        else:
+            skipped += 1
+
+    total = len(media_files)
+    for idx, file in enumerate(media_files, 1):
+        ext = file.suffix.lower()
+        if ext in PHOTO_EXTS:
+            kind = "Photos"
+        else:
+            kind = "Videos"
+
+        created = get_created_date(file)
+        month_folder = created.strftime("%Y-%m %B")
+        target_dir = dest / month_folder / kind
+        target = unique_path(target_dir / file.name)
+
+        action = "MOVE" if move else "COPY"
+        log_line = f"{action}: {file.name}  ->  {month_folder}/{kind}/"
+
+        if progress_callback:
+            progress_callback(idx, total, log_line)
+        else:
+            print(log_line)
+
+        if not dry_run:
+            target_dir.mkdir(parents=True, exist_ok=True)
+            if move:
+                shutil.move(str(file), str(target))
+            else:
+                shutil.copy2(str(file), str(target))
+
+        if kind == "Photos":
+            count_photos += 1
+        else:
+            count_videos += 1
+
+    summary = {
+        "photos": count_photos,
+        "videos": count_videos,
+        "skipped": skipped,
+        "dest": str(dest),
+        "dry_run": dry_run,
+    }
+
+    if progress_callback:
+        progress_callback(total, total, "DONE")
+    return summary
 
 
 def main():
@@ -91,50 +147,12 @@ def main():
 
     dest = Path(args.dest).expanduser().resolve() if args.dest else source / "Sorted_Media"
 
-    count_photos = 0
-    count_videos = 0
-    skipped = 0
-
-    for file in sorted(source.rglob("*")):
-        # Skip folders, hidden files, and anything already inside the destination
-        if not file.is_file() or file.name.startswith("."):
-            continue
-        if dest in file.parents:
-            continue
-
-        ext = file.suffix.lower()
-        if ext in PHOTO_EXTS:
-            kind = "Photos"
-        elif ext in VIDEO_EXTS:
-            kind = "Videos"
-        else:
-            skipped += 1
-            continue
-
-        created = get_created_date(file)
-        month_folder = created.strftime("%Y-%m %B")  # example: 2026-10 October
-        target_dir = dest / month_folder / kind
-        target = unique_path(target_dir / file.name)
-
-        action = "MOVE" if args.move else "COPY"
-        print(f"{action}: {file.name}  ->  {month_folder}/{kind}/")
-
-        if not args.dry_run:
-            target_dir.mkdir(parents=True, exist_ok=True)
-            if args.move:
-                shutil.move(str(file), str(target))
-            else:
-                shutil.copy2(str(file), str(target))
-
-        if kind == "Photos":
-            count_photos += 1
-        else:
-            count_videos += 1
+    summary = sort_media_core(source, dest, move=args.move, dry_run=args.dry_run)
 
     print()
-    print("Dry run, nothing was changed." if args.dry_run else "Done!")
-    print(f"Photos: {count_photos} | Videos: {count_videos} | Skipped (not media): {skipped}")
-    print(f"Output folder: {dest}")
+    print("Dry run, nothing was changed." if summary["dry_run"] else "Done!")
+    print(f"Photos: {summary['photos']} | Videos: {summary['videos']} | Skipped (not media): {summary['skipped']}")
+    print(f"Output folder: {summary['dest']}")
 
 
 if __name__ == "__main__":
