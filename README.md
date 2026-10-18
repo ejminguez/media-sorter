@@ -57,6 +57,7 @@ The executable will be at `dist/MediaSorter` (macOS) or `dist/MediaSorter.exe` (
 <img width="761" height="235" alt="image" src="https://github.com/user-attachments/assets/f6823a82-d6fe-46a1-948e-dd700b30d953" />
 
 
+
 ```
 Sorted_Media/
   2026-10 October/
