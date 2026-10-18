@@ -24,7 +24,6 @@ No extra packages needed. It only uses Python's standard library.
 
 import argparse
 import shutil
-import subprocess
 from datetime import datetime
 from pathlib import Path
 
@@ -38,24 +37,8 @@ VIDEO_EXTS = {
 }
 
 
-def get_created_date(path: Path) -> datetime:
-    try:
-        result = subprocess.run(
-            ["mdls", "-name", "kMDItemContentCreationDate", "-raw", str(path)],
-            capture_output=True,
-            text=True,
-            timeout=10,
-        )
-        text = result.stdout.strip()
-        if text and text != "(null)":
-            dt = datetime.strptime(text, "%Y-%m-%d %H:%M:%S %z")
-            return dt.astimezone()
-    except Exception:
-        pass
-
-    stat = path.stat()
-    timestamp = getattr(stat, "st_birthtime", None) or stat.st_mtime
-    return datetime.fromtimestamp(timestamp)
+def get_modified_date(path: Path) -> datetime:
+    return datetime.fromtimestamp(path.stat().st_mtime)
 
 
 def unique_path(target: Path) -> Path:
@@ -95,8 +78,8 @@ def sort_media_core(source: Path, dest: Path, move: bool = False, dry_run: bool 
         else:
             kind = "Videos"
 
-        created = get_created_date(file)
-        month_folder = created.strftime("%Y-%m %B")
+        modified = get_modified_date(file)
+        month_folder = modified.strftime("%Y-%m %B")
         target_dir = dest / month_folder / kind
         target = unique_path(target_dir / file.name)
 
